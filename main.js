@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, Tray } = require('electron')
 const path = require('path')
 const log = require('electron-log');
+const { prepareChromeSandbox } = require('./build/sandboxPermissions');
 
 log.initialize();
 
@@ -177,6 +178,24 @@ function getIconDir() {
 }
 
 // check if second instance was started
+async function prepareSandbox() {
+  if (process.platform !== 'linux') {
+    return;
+  }
+
+  const sandboxPath = path.join(path.dirname(process.execPath), 'chrome-sandbox');
+
+  const prepared = await prepareChromeSandbox(sandboxPath, (message) => log.info(message));
+
+  if (!prepared) {
+    log.error('chrome-sandbox cannot be prepared and user namespaces are unavailable; Electron will abort to avoid running without sandboxing.');
+    log.error('Run the following commands with sudo/root privileges to fix:');
+    log.error(`  sudo chown root:root ${sandboxPath}`);
+    log.error(`  sudo chmod 4755 ${sandboxPath}`);
+    app.exit(1);
+  }
+}
+
 if (!gotTheLock) {
   log.info('WLED-GUI quitted');
   app.quit()
@@ -191,8 +210,11 @@ if (!gotTheLock) {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
-  app.whenReady().then(createWindow)
-  app.whenReady().then(loadSettings)
+  app.whenReady().then(async () => {
+    await prepareSandbox();
+    createWindow();
+    loadSettings();
+  })
 
   // Quit when all windows are closed, except on macOS. There, it's common
   // for applications and their menu bar to stay active until the user quits
