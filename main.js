@@ -1,7 +1,7 @@
 const { app, BrowserWindow, Menu, Tray } = require('electron')
 const path = require('path')
 const log = require('electron-log');
-const { ensureChromeSandboxPermissions } = require('./build/sandboxPermissions');
+const { prepareChromeSandbox } = require('./build/sandboxPermissions');
 
 log.initialize();
 
@@ -185,13 +185,10 @@ async function prepareSandbox() {
 
   const sandboxPath = path.join(path.dirname(process.execPath), 'chrome-sandbox');
 
-  const adjusted = await ensureChromeSandboxPermissions(
-    sandboxPath,
-    (message) => log.info(message),
-  );
+  const prepared = await prepareChromeSandbox(sandboxPath, (message) => log.info(message));
 
-  if (!adjusted) {
-    log.error('chrome-sandbox permissions are incorrect; Electron will abort to avoid running without sandboxing.');
+  if (!prepared) {
+    log.error('chrome-sandbox cannot be prepared and user namespaces are unavailable; Electron will abort to avoid running without sandboxing.');
     log.error('Run the following commands with sudo/root privileges to fix:');
     log.error(`  sudo chown root:root ${sandboxPath}`);
     log.error(`  sudo chmod 4755 ${sandboxPath}`);
