@@ -185,7 +185,18 @@ async function prepareSandbox() {
 
   const sandboxPath = path.join(path.dirname(process.execPath), 'chrome-sandbox');
 
-  await ensureChromeSandboxPermissions(sandboxPath, (message) => log.info(message));
+  const adjusted = await ensureChromeSandboxPermissions(
+    sandboxPath,
+    (message) => log.info(message),
+  );
+
+  if (!adjusted) {
+    log.error('chrome-sandbox permissions are incorrect; Electron will abort to avoid running without sandboxing.');
+    log.error('Run the following commands with sudo/root privileges to fix:');
+    log.error(`  sudo chown root:root ${sandboxPath}`);
+    log.error(`  sudo chmod 4755 ${sandboxPath}`);
+    app.exit(1);
+  }
 }
 
 if (!gotTheLock) {
