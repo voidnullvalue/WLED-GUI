@@ -41,6 +41,7 @@ function createWindow() {
     height: 900,
     show: false,
     webPreferences: {
+      sandbox: true,
       nodeIntegration: true,
       contextIsolation: false
     }
@@ -75,6 +76,7 @@ function createWorker() {
   const workerWindow = new BrowserWindow({
     show: false,
     webPreferences: {
+      sandbox: true,
       nodeIntegration: true,
       contextIsolation: false
     }
